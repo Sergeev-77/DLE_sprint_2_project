@@ -41,14 +41,14 @@ def process_dataset(
 
     word_counts = [len(text.split()) for text in corpus_clean]
 
-    print(f"\nколичество текстов: {len(corpus_clean)}")
-    print("статистика количества слов в тексте:")
-    print(f"мин: {np.min(word_counts):.0f}")
-    print(f"медиана: {np.median(word_counts):.2f}")
-    print(f"среднее: {np.mean(word_counts):.2f}")
-    print(f"макс: {np.max(word_counts):.0f}")
-    print(f"5-й перцентиль: {np.percentile(word_counts, 5):.2f}")
-    print(f"95-й перцентиль: {np.percentile(word_counts, 95):.2f}")
+    print(f"\nколичество текстов: {len(corpus_clean):_}")
+    print("\nстатистика количества слов в тексте:")
+    print(f"         мин: {np.min(word_counts):.0f}")
+    print(f"     медиана: {np.median(word_counts):.2f}")
+    print(f"     среднее: {np.mean(word_counts):.2f}")
+    print(f"        макс: {np.max(word_counts):.0f}")
+    print(f" 5-й перц-ль: {np.percentile(word_counts, 5):.2f}")
+    print(f"95-й перц-ль: {np.percentile(word_counts, 95):.2f}")
 
     plt.hist(word_counts, bins=50, edgecolor="black")
     plt.title("Распределение количества слов в текстах")
