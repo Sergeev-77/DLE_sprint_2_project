@@ -13,7 +13,7 @@ class Config:
             1000 if is_test else None
         )  # на отладке кода ограничим длину исходного датасета, на бою none
         self.batch_size = (
-            16 if is_test else 256
+            16 if is_test else 128
         )  # на отладке кода ограничим батч
         self.embedding_dim = 256
         self.hidden_dim = 128
