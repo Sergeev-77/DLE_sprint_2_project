@@ -63,4 +63,8 @@ def calculate_rouge_lstm(
             progress_bar.set_postfix(
                 {"rouge1 max": f"{np.max(rouge1_scores):.4f}"}
             )
+
+    if config.device == 'cuda':
+        torch.cuda.empty_cache()        
+
     return np.mean(rouge1_scores), np.mean(rouge2_scores)

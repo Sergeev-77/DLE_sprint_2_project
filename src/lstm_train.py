@@ -1,24 +1,27 @@
+import gc
 import torch
 import matplotlib.pyplot as plt
 from tqdm import tqdm
 from src.eval_lstm import calculate_rouge_lstm
-
+from configs.config import Config
 
 def print_gpu_memory():
     if torch.cuda.is_available():
         for i in range(torch.cuda.device_count()):
+            total_memory = torch.cuda.get_device_properties(i).total_memory /1024**3
             allocated = torch.cuda.memory_allocated(i) / 1024**3  # GB
             reserved = torch.cuda.memory_reserved(i) / 1024**3  # GB
             max_allocated = torch.cuda.max_memory_allocated(i) / 1024**3
-            print(f"GPU {i}===>:")
-            print(f"current mem: {allocated:.2f} GB")
-            print(f"reserved mem: {reserved:.2f} GB")
+            utilization = allocated / total_memory * 100
+            print(f"\nGPU {i}===>:")
+            print(f"total mem    : {total_memory:.2f} GB")
+            print(f"!current mem : {allocated:.2f} GB ({utilization:.1f}%)")
+            print(f"reserved mem : {reserved:.2f} GB")
             print(f"max per epoch: {max_allocated:.2f} GB")
-            print(f"=====>GPU {i}")
+            print(f"=====>GPU {i}]\n")
             torch.cuda.reset_peak_memory_stats()
     else:
         print("cuda не доступна")
-
 
 def plot_metrics(metrics):
     epochs = range(1, len(metrics["train_losses"]) + 1)
@@ -66,18 +69,28 @@ def plot_metrics(metrics):
 def train_model(
     model,
     tokenizer,
-    config,
+    config: Config,
     train_dataloader,
     val_dataloader,
+    val_sample_dataloader,
     criterion,
     optimizer,
 ):
+    
+
+
+    if config.device == 'cuda':
+        torch.cuda.synchronize()
+        torch.cuda.empty_cache()        
+
+    gc.collect()
+
     train_losses = []
     val_losses = []
     val_rouge1 = []
     val_rouge2 = []
 
-    print(f"Модель на {next(model.parameters()).device}")
+    print(f"Модель на {next(model.parameters()).device}\n")
 
     for epoch in range(config.num_epochs):
         model.train()
@@ -108,6 +121,11 @@ def train_model(
         avg_loss = cur_train_loss / len(train_dataloader)
         train_losses.append(avg_loss)
 
+        if config.device == 'cuda':
+            torch.cuda.empty_cache()        
+
+        gc.collect()
+
         # Валидация
         model.eval()
         epoch_val_loss = 0
@@ -127,16 +145,21 @@ def train_model(
         val_losses.append(avg_val_loss)
 
         val_r1, val_r2 = calculate_rouge_lstm(
-            model, val_dataloader, tokenizer, config, prefix="val"
+            model, val_sample_dataloader, tokenizer, config, prefix="val_smpl"
         )
 
         val_rouge1.append(val_r1)
         val_rouge2.append(val_r2)
 
         print_gpu_memory()
-        print(f"  train loss: {avg_loss:.4f}, val loss: {avg_val_loss:.4f}")
-        print(f"  val rouge1: {val_r1:.4f}, val rouge2: {val_r2:.4f}")
-        print("-" * 20, f"end of epoch {epoch+1}/{10}", "-" * 20, "\n")
+        print(f"  train loss:      {avg_loss:.4f}, val loss: {avg_val_loss:.4f}")
+        print(f"  val_smpl rouge1: {val_r1:.4f},   val_smpl rouge2: {val_r2:.4f}")
+        print("\n", "-" * 20, f"end of epoch {epoch+1}/{10}", "-" * 20, "\n")
+
+        if config.device == 'cuda':
+            torch.cuda.empty_cache()        
+
+        gc.collect()
 
     plot_metrics(
         {
