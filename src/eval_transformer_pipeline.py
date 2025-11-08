@@ -27,7 +27,8 @@ def calculate_rouge_transformer(
             do_sample=True,
             pad_token_id=config.pad_token_id,
         )
-    for i, result in enumerate(results):
+    progress_bar = tqdm(enumerate(results), desc=f"         сalc rouge metrics {prefix}")
+    for i, result in progress_bar:
         full_text = result[0]["generated_text"]
         input_txt = inputs[i]
         target_txt = targets[i]
@@ -39,5 +40,5 @@ def calculate_rouge_transformer(
         r2 = scores["rouge2"].fmeasure
         rouge1_scores.append(r1)
         rouge2_scores.append(r2)
-        # progress_bar.set_postfix({"rouge1 max": f"{np.max(rouge1_scores):.4f}"})
+        progress_bar.set_postfix({"rouge1 max": f"{np.max(rouge1_scores):.4f}"})
     return np.mean(rouge1_scores), np.mean(rouge2_scores)
